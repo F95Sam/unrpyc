@@ -63,10 +63,13 @@ class SL2Decompiler(DecompilerBase):
             self.write(reconstruct_paraminfo(ast.parameters))
         # Print any keywords
         if ast.tag:
-            self.write(" tag %s" % ast.tag)
+            with self.increase_indent():
+                self.write(":")
+                self.indent()
+                self.write("tag %s" % ast.tag)
         # If we're decompiling screencode, print it. Else, insert a pass statement
         self.print_keywords_and_children(ast.keyword,
-            ast.children, ast.location[1])
+            ast.children, ast.location[1], False, False, bool(ast.tag))
 
     @dispatch(sl2.slast.SLIf)
     def print_if(self, ast):
@@ -253,7 +256,7 @@ class SL2Decompiler(DecompilerBase):
         (layout.MultiBox, "hbox"):         ("hbox", 'many')
     }
 
-    def print_keywords_and_children(self, keywords, children, lineno, needs_colon=False, has_block=False):
+    def print_keywords_and_children(self, keywords, children, lineno, needs_colon=False, has_block=False, tag_bypass=False):
         # This function prints the keyword arguments and child nodes
         # Used in a displayable screen statement
 
@@ -287,7 +290,7 @@ class SL2Decompiler(DecompilerBase):
         if keywords_by_line[0][1]: # this never happens if lineno was None
             self.write(" %s" % ' '.join(keywords_by_line[0][1]))
         if block_contents or (not has_block and children_after_keywords):
-            if lineno is not None:
+            if lineno is not None and not tag_bypass:
                 self.write(":")
             with self.increase_indent():
                 for i in block_contents:
